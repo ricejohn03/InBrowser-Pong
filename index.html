@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Speed Pong</title>
+</head>
+<body>
+	<div class="container"style="position: relative;">
+		<div class="inner" style="position: absolute;
+									  		top: 50%;
+									  		left: 50%;
+									  		text-align: center;
+									  		transform: translate(-50%, -0%);">
+			<h1>Speed Pong </h1>
+			<h3 id="speed"> </h3>
+			<h3 id="topspeed"> </h3> 
+			<canvas id="gameCanvas" width="1200" height="600"></canvas>
+			<button onclick="toggleUser()" id="ai">Click to Take Over Player One</button>
+			<button onclick="resetScore()"> Reset Score Board </button>
+		</div>
+	</div>
+
+</body>
+
+
+<script type="text/javascript">
+	var canvas
+	var canvasContext
+
+	var fps = 120
+
+	var ballWidth = 20
+	var ballHeight = 20
+
+	var ballX = 390
+	var ballY = 300
+
+	var aiPlayerY = 250
+	var aiPlayerY2 = 250
+	var paddle1Y = 0
+
+	const PADDLE_HEIGHT = 100
+	const PADDLE_WIDTH =  15
+
+	var ballspeedX = 5
+	var ballspeedY = 1
+
+	var player1Score = 0
+	var player2Score = 0
+
+	var modspeedX = 0
+
+	var bounceCount = 0
+	var maxSpeed = 0 
+	var currentSpeed = 0
+
+	//UI elements and Features
+	var p1button = document.getElementById('ai') 
+	var speed = document.getElementById('speed')
+	var topspeed = document.getElementById('topspeed')
+
+	// on click function to give controll to the user or the AI
+	function toggleUser(){
+		if(p1button.id == 'ai'){
+			p1button.id = 'user'
+			p1button.innerHTML = 'Give back Control to AI'
+		}
+
+		else if(p1button.id == 'user'){
+			p1button.id = 'ai'
+			p1button.innerHTML = 'Take back Control Of Player 1'
+
+		}
+	}
+
+
+	function checkSpeed(){
+		return fps
+	}
+
+
+	// resets session Score
+	function resetScore(){
+		player1Score = 0
+		player2Score = 0
+	}
+
+	
+	//Calculate Mouse Postition with respect to canvas 
+	function calculateMousePos(evt){
+		var rect = canvas.getBoundingClientRect()
+		var root = document.documentElement;
+		var mouseX = evt.clientX - rect.left - root.scrollLeft
+		var mouseY = evt.clientY - rect.top - root.scrollTop
+		return{
+			x:mouseX,
+			y:mouseY
+		}
+	}
+
+	window.onload = function() {
+		canvas = document.getElementById('gameCanvas')
+		canvasContext = canvas.getContext('2d')
+		console.log(window.fps)
+		setInterval(function(){
+			moveEveything()
+			drawEveything()
+		}, 1000/fps)
+
+
+
+		canvas.addEventListener('mousemove',
+			function(evt){
+				var mousePos = calculateMousePos(evt)
+				paddle1Y = mousePos.y - (PADDLE_HEIGHT/2)
+
+			})
+
+	function resetBall(){
+		ballX = canvas.width / 2
+		ballY = canvas.height /2
+		ballspeedX = Math.floor(Math.random() * (3) + 3) * randomPostiveNegative()
+		ballspeedY = Math.floor(Math.random() * (2) + .5) * randomPostiveNegative()
+	}
+	
+
+	function randomPostiveNegative(){
+		return Math.random() < 0.5 ? -1 : 1;
+	}
+
+	function computerAI(){
+		var paddle1YCenter = aiPlayerY + (PADDLE_HEIGHT/2)
+		if(paddle1YCenter < ballY -40 ){
+			aiPlayerY += 2 * (.7 * Math.abs(ballspeedY) )
+		}
+		else if(paddle1YCenter > ballY + 40){
+			aiPlayerY -= 2 * (.7 * Math.abs(ballspeedY) )
+		}
+	}
+
+	function computerAI2(){
+		var paddle2YCenter = aiPlayerY2 + (PADDLE_HEIGHT/2)
+		if(ballspeedX > 0 ){
+			if(paddle2YCenter < canvas.height /2){
+				aiPlayerY2 += 3 * (.7 * Math.abs(ballspeedY) )
+			}
+			if(paddle2YCenter > canvas.height /2){
+				aiPlayerY2 -= 3 * (.7 * Math.abs(ballspeedY) )
+			}
+
+		}else{
+			if(paddle2YCenter < ballY -35 ){
+			aiPlayerY2 += 3 * (.7 * Math.abs(ballspeedY) )
+		}
+		else if(paddle2YCenter > ballY + 35){
+			aiPlayerY2 -= 3 * (.7 * Math.abs(ballspeedY) )
+		}
+		}
+		
+	}
+
+
+
+		
+	function moveEveything(){
+
+
+		if(p1button.id == 'ai'){
+			paddle1Y = aiPlayerY2
+		}
+
+		ballX = ballX + ballspeedX 
+		ballY = ballY + ballspeedY
+
+		currentSpeed = Math.floor(Math.abs(ballspeedX) + Math.abs(ballspeedY)) * 120
+
+		speed.innerHTML =  "Current Speed: " + currentSpeed + "pps"
+		
+
+		if(ballX < 25){
+			if(ballY > paddle1Y && ballY < paddle1Y + PADDLE_HEIGHT){
+				ballspeedX = -ballspeedX
+				bounceCount += 1
+
+				//Bounce Modifier
+				if(bounceCount % 5 ==0){
+					ballspeedY += .025
+				}
+				ballspeedX += .25
+				console.log(`BSX: ${ballspeedX} BSY: ${ballspeedY}`)
+
+			}
+
+		}
+
+		if(ballX > canvas.width - 25){
+			if(ballY > aiPlayerY && ballY < aiPlayerY + PADDLE_HEIGHT){
+				ballspeedX = -ballspeedX
+				bounceCount += 1
+
+				//Bounce Modifier
+				if(bounceCount % 5 ==0){
+					ballspeedY += .025
+				}
+				
+				ballspeedX += -.25
+				console.log(`BSX: ${ballspeedX} BSY: ${ballspeedY}`)
+
+
+			}
+		}
+
+		if(ballY < 0){
+			ballspeedY = -ballspeedY
+			if(bounceCount % 2 ==0){
+					ballspeedY += .5
+				}
+		}
+
+		if(ballY > canvas.height){
+			ballspeedY = -ballspeedY
+			if(bounceCount % 2 ==0){
+					ballspeedY += -.5
+				}
+		}
+
+		if(ballX > canvas.width - 5){
+			resetBall()
+			setTopSpeed(currentSpeed)
+			player1Score ++ 
+		}
+		
+		if(ballX < 5){
+			resetBall()
+			setTopSpeed(currentSpeed)
+			player2Score ++
+
+		}
+
+	}
+
+	function setTopSpeed(speed){
+		if(speed > maxSpeed){
+			maxSpeed = speed
+		}
+		topspeed.innerHTML = "Top Speed: " + maxSpeed + "pps"
+	}
+
+	function changeBallColorOnSpeed(){
+
+		if(ballspeedX > 22  || ballspeedX < -22){
+			return 'blue'
+		}
+		if(ballspeedX > 17  || ballspeedX < -17){
+			return 'red'
+		}
+		if(ballspeedX > 13  || ballspeedX < -13){
+			return 'pink'
+		}
+		if(ballspeedX > 8 || ballspeedX < -8){
+			return 'yellow'
+		}
+		else{
+			return 'green'
+		}
+
+		return speedColor
+
+	}
+
+	
+
+	function drawEveything(){
+		computerAI()
+
+		if(p1button.id == 'ai'){
+			computerAI2()
+			paddle1Y = aiPlayerY2
+		}
+
+
+		//the box
+		canvasContext.fillStyle = 'black'
+		canvasContext.fillRect(0, 0, canvas.width, canvas.height)
+
+		//the middle line
+		canvasContext.fillStyle = 'white'
+		canvasContext.fillRect(canvas.width/2, 0, 6, canvas.height)
+
+		var speedColor = changeBallColorOnSpeed()
+
+		colorCirle(ballX, ballY, 10, speedColor )
+
+		//both bars
+		canvasContext.fillStyle = 'white'
+		canvasContext.fillRect(10, paddle1Y , PADDLE_WIDTH, PADDLE_HEIGHT)
+
+		canvasContext.fillStyle = 'white'
+		canvasContext.fillRect(canvas.width - 25, aiPlayerY , PADDLE_WIDTH, PADDLE_HEIGHT)
+
+		//show score
+		canvasContext.fillText(player1Score, canvas.width/4, canvas.height*.2 )
+
+		canvasContext.fillText(player2Score, canvas.width * .75, canvas.height*.2 )
+
+
+	}
+
+	function colorCirle(centerX, centerY, radius, drawColor){
+		//the ball
+		canvasContext.fillStyle = drawColor
+		canvasContext.beginPath()
+		canvasContext.arc(centerX, centerY, radius, 0, Math.PI*2, true)
+		canvasContext.fill()
+
+	}
+
+	
+
+	}
+</script>
+</html>
